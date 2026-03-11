@@ -1,0 +1,162 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": false,
+      "displayName": "Default",
+      "description": "Default configuration",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/target"
+      }
+    },
+    {
+      "name": "gcc",
+      "displayName": "GCC",
+      "description": "GCC configuration",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc"
+      }
+    },
+    {
+      "name": "clang",
+      "displayName": "Clang",
+      "description": "Clang configuration",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-19",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-19"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "gcc-release",
+      "displayName": "GCC Release",
+      "configurePreset": "gcc",
+      "configuration": "release"
+    },
+    {
+      "name": "gcc-debug",
+      "displayName": "GCC Debug",
+      "configurePreset": "gcc",
+      "configuration": "debug"
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang Release",
+      "configurePreset": "clang",
+      "configuration": "release"
+    },
+    {
+      "name": "clang-debug",
+      "displayName": "Clang Debug",
+      "configurePreset": "clang",
+      "configuration": "debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "gcc-debug-test",
+      "displayName": "GCC Debug Test",
+      "configurePreset": "gcc",
+      "configuration": "debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "clang-debug-test",
+      "displayName": "Clang Debug Test",
+      "configurePreset": "clang",
+      "configuration": "debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "gcc-release-workflow",
+      "displayName": "GCC Release Workflow",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gcc"
+        },
+        {
+          "type": "build",
+          "name": "gcc-release"
+        }
+      ]
+    },
+    {
+      "name": "clang-release-workflow",
+      "displayName": "Clang Release Workflow",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang"
+        },
+        {
+          "type": "build",
+          "name": "clang-release"
+        }
+      ]
+    },
+    {
+      "name": "gcc-debug-workflow",
+      "displayName": "GCC Debug Workflow",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gcc"
+        },
+        {
+          "type": "build",
+          "name": "gcc-debug"
+        },
+        {
+          "type": "test",
+          "name": "gcc-debug-test"
+        }
+      ]
+    },
+    {
+      "name": "clang-debug-workflow",
+      "displayName": "Clang Debug Workflow",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang"
+        },
+        {
+          "type": "build",
+          "name": "clang-debug"
+        },
+        {
+          "type": "test",
+          "name": "clang-debug-test"
+        }
+      ]
+    }
+  ]
+}

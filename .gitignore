@@ -1,0 +1,9 @@
+.cache/
+build/
+images/
+model/
+target/
+*.nsys-rep
+*.sqlite
+compile_commands.json
+metadata.json
