@@ -9,26 +9,6 @@
 #include <trt_wrapper/ModelBuilder.h>
 
 TRTPtr<nvinfer1::ICudaEngine>
-TRTModelBuilder::getEngine(const std::string& onnxPath,
-                           const std::string& enginePath) {
-    // 1. 尝试从本地加载
-    auto engine = loadFromPlan(enginePath);
-    if (engine) {
-        m_logger.log(
-            TRTLogger::Severity::kINFO,
-            fmt::format("[TRT] Loaded engine from: {}", enginePath).c_str());
-        return engine;
-    }
-
-    // 2. 加载失败则编译
-    m_logger.log(
-        TRTLogger::Severity::kINFO,
-        fmt::format("[TRT] Engine not found. Building from ONNX: {}", onnxPath)
-            .c_str());
-    return buildFromOnnx(onnxPath, enginePath);
-}
-
-TRTPtr<nvinfer1::ICudaEngine>
 TRTModelBuilder::loadFromPlan(const std::string& enginePath) {
     std::ifstream file(enginePath, std::ios::binary);
     if (!file.good())
@@ -49,28 +29,27 @@ TRTModelBuilder::loadFromPlan(const std::string& enginePath) {
 
 TRTPtr<nvinfer1::ICudaEngine>
 TRTModelBuilder::buildFromOnnx(const std::string& onnxPath,
-                               const std::string& enginePath) {
+                               const std::string& enginePath,
+                               TRTBuildConfigFun configFun) {
     auto builder =
         TRTPtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(m_logger));
-    const auto explicitBatch =
-        1U << static_cast<uint32_t>(
-            nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
-    auto network = TRTPtr<nvinfer1::INetworkDefinition>(
-        builder->createNetworkV2(explicitBatch));
+    auto network =
+        TRTPtr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(0U));
     auto config =
         TRTPtr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
     auto parser = TRTPtr<nvonnxparser::IParser>(
         nvonnxparser::createParser(*network, m_logger));
 
+    // 如果解析失败，说明 onnx 模型有问题
     if (!parser->parseFromFile(
             onnxPath.c_str(),
             static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
         return nullptr;
     }
 
-    // 这里可以开启 FP16 优化
-    if (builder->platformHasFastFp16()) {
-        config->setFlag(nvinfer1::BuilderFlag::kFP16);
+    if (configFun) {
+        // 调用配置函数
+        configFun(config.get(), network.get(), builder.get());
     }
 
     // 编译模型

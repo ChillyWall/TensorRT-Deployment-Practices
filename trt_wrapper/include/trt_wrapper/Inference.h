@@ -4,7 +4,8 @@
 
 #include <trt_wrapper/common.h>
 
-template <TensorSpecType InputSpec, TensorSpecType OutputSpec>
+using TRTInferConfigFun = std::function<void(nvinfer1::IExecutionContext*)>;
+
 class TRTInference {
 protected:
     nvinfer1::ICudaEngine& engine;
@@ -42,7 +43,10 @@ public:
         return stream;
     }
 
-    void infer() {
-        context->enqueueV3(stream);
+    bool infer(TRTInferConfigFun configFun = nullptr) {
+        if (configFun) {
+            configFun(context.get());
+        }
+        return context->enqueueV3(stream);
     }
 };

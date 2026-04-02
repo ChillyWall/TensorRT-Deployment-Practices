@@ -1,13 +1,9 @@
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <iostream>
 
 #include <opencv2/opencv.hpp>
 #include "nlohmann/json.hpp"
-
-#include <trt_wrapper/logger.h>
-#include <trt_wrapper/ModelBuilder.h>
 
 #include <Cifar100CNN.h>
 
@@ -53,7 +49,7 @@ int main() {
     }
 
     int correct_count = 0;
-    std::vector<int> results = cifar100.infer(images);
+    std::vector<int> results = cifar100.infer(images, 128);
 
     for (size_t i = 0; i < results.size(); ++i) {
         if (results[i] == items[i].index) {

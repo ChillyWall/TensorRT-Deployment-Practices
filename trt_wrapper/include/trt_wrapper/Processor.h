@@ -17,8 +17,8 @@ constexpr auto make_betas_impl(const std::array<float, sizeof...(Is)>& means,
     return std::array<float, sizeof...(Is)> {(-means[Is] / stds[Is])...};
 }
 
-template <TensorSpecType InputSpec, ArraySpecType Mean, ArraySpecType Std,
-          ChannelMapType ChannelMap = KeepChannelMap>
+template <TensorSpecType InputSpec, FloatArraySpecType Mean,
+          FloatArraySpecType Std, ChannelMapType ChannelMap = KeepChannelMap>
 class ConvertHWC2CHW {
 private:
     constexpr static int input_height = InputSpec::dims()[0];

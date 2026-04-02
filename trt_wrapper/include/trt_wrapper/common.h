@@ -3,13 +3,14 @@
 #include <concepts>
 #include <memory>
 
+#include <NvInfer.h>
 #include <opencv2/opencv.hpp>
 
 struct TRTDeleter {
     template <typename T>
     void operator()(T* obj) const {
         if (obj) {
-#if NV_TENSORRT_MAJOR < 10
+#if NV_TENSORRT_MAJOR < 9
             obj->destroy();
 #else
             delete obj;  // TensorRT 10.0+ 推荐做法
@@ -46,7 +47,7 @@ concept TensorSpecType = requires {
 
 // 编译期数组
 template <float... elems>
-struct ArraySpec {
+struct FloatArraySpec {
     static constexpr std::array<float, sizeof...(elems)> values() {
         return {elems...};
     }
@@ -55,7 +56,7 @@ struct ArraySpec {
 /* 是是否编译期数组规格类型，即可通过values()方法获取std::array<float,
  * N>类型的数组，其中N为元素个数个数 */
 template <typename T>
-concept ArraySpecType = requires {
+concept FloatArraySpecType = requires {
     {
         T::values()
     } -> std::convertible_to<std::array<float, T::values().size()>>;
