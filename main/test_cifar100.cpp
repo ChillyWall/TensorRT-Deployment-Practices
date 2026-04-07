@@ -49,7 +49,7 @@ int main() {
     }
 
     int correct_count = 0;
-    std::vector<int> results = cifar100.infer(images, 128);
+    std::vector<int> results = cifar100.infer(images, 256);
 
     for (size_t i = 0; i < results.size(); ++i) {
         if (results[i] == items[i].index) {
