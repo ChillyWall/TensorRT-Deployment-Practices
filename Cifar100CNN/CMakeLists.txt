@@ -12,15 +12,15 @@ target_compile_definitions(
 
 include(GNUInstallDirs)
 
-install(TARGETS cifar100cnn
+install(TARGETS test_cifar
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # 安装库文件到 lib
-install(TARGETS test_cifar
+install(TARGETS cifar100cnn
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-# 配合方案 1 的 RPATH 设置：
+# RPATH 设置：
 set_target_properties(test_cifar PROPERTIES
     INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
 )

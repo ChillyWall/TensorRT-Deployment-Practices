@@ -2,6 +2,7 @@
 #include <vector>
 
 #include <NvInfer.h>
+#include <NvInferPlugin.h>
 #include <NvOnnxParser.h>
 
 #include <trt_wrapper/common.h>
@@ -46,6 +47,12 @@ TRTModelBuilder::buildFromOnnx(const std::string& onnxPath,
             static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
         return nullptr;
     }
+
+    // bool res = initLibNvInferPlugins(&m_logger, "");
+    // if (!res) {
+    //     m_logger.log(nvinfer1::ILogger::Severity::kERROR,
+    //                  "Failed to initialize TensorRT plugins");
+    // }
 
     if (configFun) {
         // 调用配置函数

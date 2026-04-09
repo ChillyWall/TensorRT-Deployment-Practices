@@ -10,7 +10,8 @@ using OutputRes = TensorSpec<100>;
 using Mean = FloatArraySpec<0.5071f, 0.4865f, 0.4409f>;
 using Std = FloatArraySpec<0.2673f, 0.2564f, 0.2761f>;
 using ChannelMap = ChannelMapSpec<2, 1, 0>;
-using Cifar100Processor = ConvertHWC2CHW<InputImg, Mean, Std, ChannelMap>;
+using Cifar100Processor =
+    ConvertHWC2CHWAndNormalize<InputImg, Mean, Std, ChannelMap>;
 
 using BatchSize = TensorSpec<1, 64, 256>;
 using Input = TensorSpec<BatchSize::dims()[2], 3, 32, 32>;

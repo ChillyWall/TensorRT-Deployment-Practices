@@ -19,7 +19,7 @@ constexpr auto make_betas_impl(const std::array<float, sizeof...(Is)>& means,
 
 template <TensorSpecType InputSpec, FloatArraySpecType Mean,
           FloatArraySpecType Std, ChannelMapType ChannelMap = KeepChannelMap>
-class ConvertHWC2CHW {
+class ConvertHWC2CHWAndNormalize {
 private:
     constexpr static int input_height = InputSpec::dims()[0];
     constexpr static int input_width = InputSpec::dims()[1];
@@ -49,5 +49,60 @@ public:
                                       alphas[channel_map[i]],
                                       betas[channel_map[i]]);
         }
+    }
+};
+
+template <TensorSpecType InputSpec, TensorSpecType OutputSpec>
+struct LetterBox {
+    static cv::Mat process(const cv::Mat& input) {
+        constexpr int input_width = InputSpec::dims()[0];
+        constexpr int input_height = InputSpec::dims()[1];
+        constexpr int output_width = OutputSpec::dims()[0];
+        constexpr int output_height = OutputSpec::dims()[1];
+
+        constexpr float scale =
+            std::min(static_cast<float>(output_width) / input_width,
+                     static_cast<float>(output_height) / input_height);
+
+        constexpr int resized_width = static_cast<int>(input_width * scale);
+        constexpr int resized_height = static_cast<int>(input_height * scale);
+
+        constexpr int x_offset = (output_width - resized_width) / 2;
+        constexpr int y_offset = (output_height - resized_height) / 2;
+
+        cv::Mat resized;
+        cv::resize(input, resized, cv::Size(resized_width, resized_height));
+
+        cv::Mat output =
+            cv::Mat::zeros(output_height, output_width, input.type());
+
+        cv::Rect roi(x_offset, y_offset, resized_width, resized_height);
+        resized.copyTo(output(roi));
+
+        return output;
+    }
+};
+
+template <TensorSpecType InputSpec, TensorSpecType OutputSpec>
+struct DeLetterBox {
+    static cv::Rect process(const cv::Rect& input) {
+        constexpr int input_width = InputSpec::dims()[0];
+        constexpr int input_height = InputSpec::dims()[1];
+        constexpr int output_width = OutputSpec::dims()[0];
+        constexpr int output_height = OutputSpec::dims()[1];
+
+        constexpr float scale =
+            std::min(static_cast<float>(output_width) / input_width,
+                     static_cast<float>(output_height) / input_height);
+
+        constexpr int resized_width = static_cast<int>(input_width * scale);
+        constexpr int resized_height = static_cast<int>(input_height * scale);
+
+        constexpr int x_offset = (output_width - resized_width) / 2;
+        constexpr int y_offset = (output_height - resized_height) / 2;
+
+        return cv::Rect((input.x - x_offset) / scale,
+                        (input.y - y_offset) / scale, input.width / scale,
+                        input.height / scale);
     }
 };
