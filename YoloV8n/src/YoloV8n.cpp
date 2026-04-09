@@ -1,5 +1,6 @@
 #include "trt_wrapper/ModelBuilder.h"
 
+#include <memory>
 #include "YoloV8n.h"
 
 using InputImg = TensorSpec<640, 640, 3>;
@@ -19,8 +20,38 @@ using InputSize = TensorSpec<1280, 720>;
 using TargetSize = TensorSpec<640, 640>;
 
 void YoloV8n::set_tensor_addresses() {
+    // 分配显存和内存，并绑定输入缓冲区地址
+    input_size = sizeof(float) * InputImg::total_size();
+    cudaHostAlloc((void**) &input_buffer, input_size, cudaHostAllocDefault);
+    cudaMalloc(&gpu_input, input_size);
     inference->set_tensor_address("images", gpu_input);
-    inference->set_tensor_address("output0", gpu_output);
+
+    // 根据是否启用EfficientNMS插件，分配不同的输出缓冲区，并绑定输出地址
+    if (enable_efficient_nms) {
+        output_size = sizeof(YoloDetectResultNMS);
+    } else {
+        output_size = sizeof(float) * OutputRes::total_size();
+    }
+
+    cudaHostAlloc((void**) &output_buffer, output_size, cudaHostAllocDefault);
+    cudaMalloc(&gpu_output, output_size);
+
+    if (enable_efficient_nms) {
+        inference->set_tensor_address(
+            "num_dets",
+            &(reinterpret_cast<YoloDetectResultNMS*>(gpu_output)->num_dets));
+        inference->set_tensor_address(
+            "det_boxes",
+            &(reinterpret_cast<YoloDetectResultNMS*>(gpu_output)->det_boxes));
+        inference->set_tensor_address(
+            "det_scores",
+            &(reinterpret_cast<YoloDetectResultNMS*>(gpu_output)->det_scores));
+        inference->set_tensor_address(
+            "det_classes",
+            &(reinterpret_cast<YoloDetectResultNMS*>(gpu_output)->det_classes));
+    } else {
+        inference->set_tensor_address("output0", gpu_output);
+    }
 }
 
 void YoloV8n::read_labels(const std::string& labels_path) {
@@ -146,11 +177,36 @@ void YoloV8n::apply_deletterbox(std::vector<YoloDetectResult>& results) {
     }
 }
 
+std::vector<YoloDetectResult> YoloV8n::decode_output_nms() {
+    auto output = reinterpret_cast<YoloDetectResultNMS*>(output_buffer);
+    static_assert(sizeof(YoloDetectResultNMS) == (1 + 100 * 4 + 100 + 100) * 4);
+
+    std::vector<YoloDetectResult> results;
+    results.reserve(output->num_dets);
+    for (int i = 0; i < output->num_dets; ++i) {
+        int class_id = static_cast<int>(output->det_classes[i]);
+        float confidence = output->det_scores[i];
+        float x1 = output->det_boxes[i][0];
+        float y1 = output->det_boxes[i][1];
+        float x2 = output->det_boxes[i][2];
+        float y2 = output->det_boxes[i][3];
+        cv::Rect box(x1, y1, x2 - x1, y2 - y1);
+        results.push_back({class_id, confidence, box});
+    }
+
+    return results;
+}
+
 std::vector<YoloDetectResult> YoloV8n::postprocess() {
-    auto result = decode_output();
-    apply_nms(result, 0.45f);
-    apply_deletterbox(result);
-    return result;
+    std::vector<YoloDetectResult> results;
+    if (enable_efficient_nms) {
+        results = decode_output_nms();
+    } else {
+        results = decode_output();
+        apply_nms(results, 0.45f);
+    }
+    apply_deletterbox(results);
+    return results;
 }
 
 cv::Mat YoloV8n::visualize(const cv::Mat& input,
@@ -182,20 +238,21 @@ void YoloV8n::infer() {
 }
 
 auto YoloV8n::InputData() {
-    return cudaMemcpyAsync(gpu_input, input_buffer,
-                           sizeof(float) * InputImg::total_size(),
+    return cudaMemcpyAsync(gpu_input, input_buffer, input_size,
                            cudaMemcpyHostToDevice, inference->get_stream());
 }
 
 auto YoloV8n::OutputData() {
-    return cudaMemcpyAsync(output_buffer, gpu_output,
-                           sizeof(float) * OutputRes::total_size(),
+    return cudaMemcpyAsync(output_buffer, gpu_output, output_size,
                            cudaMemcpyDeviceToHost, inference->get_stream());
 }
 
 YoloV8n::YoloV8n(std::string onnx_path, std::string engine_path,
-                 TRTLogger& logger, bool always_rebuild)
-    : onnx_path(onnx_path), engine_path(engine_path) {
+                 TRTLogger& logger, bool enable_efficient_nms_plugin,
+                 bool always_rebuild)
+    : onnx_path(onnx_path),
+      engine_path(engine_path),
+      enable_efficient_nms(enable_efficient_nms_plugin) {
     auto builder = TRTModelBuilder(logger);
     if (always_rebuild || !(engine = builder.loadFromPlan(engine_path))) {
         engine = builder.buildFromOnnx(
@@ -211,14 +268,6 @@ YoloV8n::YoloV8n(std::string onnx_path, std::string engine_path,
             });
     }
     inference = TRTPtr<TRTInference>(new TRTInference(*engine));
-
-    cudaHostAlloc((void**) &input_buffer,
-                  sizeof(float) * InputImg::total_size(), cudaHostAllocDefault);
-    cudaHostAlloc((void**) &output_buffer,
-                  sizeof(float) * OutputRes::total_size(),
-                  cudaHostAllocDefault);
-    cudaMalloc(&gpu_input, sizeof(float) * InputImg::total_size());
-    cudaMalloc(&gpu_output, sizeof(float) * OutputRes::total_size());
 
     set_tensor_addresses();
 

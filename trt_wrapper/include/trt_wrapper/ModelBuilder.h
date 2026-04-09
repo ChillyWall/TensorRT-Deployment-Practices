@@ -12,8 +12,7 @@ using TRTBuildConfigFun =
 
 class TRTModelBuilder {
 public:
-    TRTModelBuilder(nvinfer1::ILogger& logger) : m_logger(logger) {}
-
+    TRTModelBuilder(nvinfer1::ILogger& logger);
     // 从本地 .engine (Plan) 文件加载
     TRTPtr<nvinfer1::ICudaEngine> loadFromPlan(const std::string& enginePath);
 

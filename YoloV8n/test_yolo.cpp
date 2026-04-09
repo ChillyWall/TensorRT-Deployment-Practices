@@ -10,12 +10,12 @@ namespace fs = std::filesystem;
 
 int main() {
     std::string onnxModelPath =
-        fs::path(PROJECT_SOURCE_DIR) / "model/yolov8n.onnx";
+        fs::path(PROJECT_SOURCE_DIR) / "model/yolov8n_nms.onnx";
     std::string engineFilePath =
-        fs::path(PROJECT_SOURCE_DIR) / "model/yolov8n.engine";
+        fs::path(PROJECT_SOURCE_DIR) / "model/yolov8n_nms.engine";
     TRTLogger glogger;
 
-    YoloV8n yolo(onnxModelPath, engineFilePath, glogger);
+    YoloV8n yolo(onnxModelPath, engineFilePath, glogger, true);
     Camera camera;
 
     while (1) {

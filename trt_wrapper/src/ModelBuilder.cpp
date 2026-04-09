@@ -9,6 +9,10 @@
 #include <trt_wrapper/logger.h>
 #include <trt_wrapper/ModelBuilder.h>
 
+TRTModelBuilder::TRTModelBuilder(nvinfer1::ILogger& logger) : m_logger(logger) {
+    initLibNvInferPlugins(&m_logger, "");
+}
+
 TRTPtr<nvinfer1::ICudaEngine>
 TRTModelBuilder::loadFromPlan(const std::string& enginePath) {
     std::ifstream file(enginePath, std::ios::binary);
