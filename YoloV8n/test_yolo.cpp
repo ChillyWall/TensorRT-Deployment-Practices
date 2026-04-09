@@ -9,13 +9,16 @@ const int DATASET_SIZE = 10000;
 namespace fs = std::filesystem;
 
 int main() {
+    cv::FileStorage fs(fs::path(PACKAGE_ROOT_DIR) / "config/config.yml",
+                       cv::FileStorage::READ);
     std::string onnxModelPath =
-        fs::path(PROJECT_SOURCE_DIR) / "model/yolov8n_nms.onnx";
+        fs::path(PROJECT_SOURCE_DIR) / std::string(fs["onnx_path"]);
     std::string engineFilePath =
-        fs::path(PROJECT_SOURCE_DIR) / "model/yolov8n_nms.engine";
+        fs::path(PROJECT_SOURCE_DIR) / std::string(fs["engine_path"]);
     TRTLogger glogger;
 
-    YoloV8n yolo(onnxModelPath, engineFilePath, glogger, true);
+    YoloV8n yolo(onnxModelPath, engineFilePath, glogger,
+                 bool(int(fs["enable_efficient_nms_plugin"])));
     Camera camera;
 
     while (1) {

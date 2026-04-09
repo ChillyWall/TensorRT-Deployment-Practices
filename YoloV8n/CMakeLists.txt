@@ -12,6 +12,7 @@ target_link_libraries(test_yolo PRIVATE yolov8n camera)
 target_compile_definitions(
     test_yolo
     PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+    PACKAGE_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 include(GNUInstallDirs)
