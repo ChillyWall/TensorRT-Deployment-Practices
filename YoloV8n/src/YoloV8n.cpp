@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "trt_wrapper/ModelBuilder.h"
 
 #include <memory>
@@ -272,6 +274,14 @@ YoloV8n::YoloV8n(std::string onnx_path, std::string engine_path,
     set_tensor_addresses();
 
     read_labels(std::string(PACKAGE_ROOT_DIR) + "/config/labels.yml");
+
+    std::cout << std::format(
+                     "Model initialized:\nONNX: {}\nEngine: {}\nEfficient NMS "
+                     "Plugin: {}\nAlways rebuild: {}",
+                     onnx_path, engine_path,
+                     enable_efficient_nms ? "Enabled" : "Disabled",
+                     always_rebuild ? "True" : "False")
+              << std::endl;
 }
 
 YoloV8n::~YoloV8n() noexcept {

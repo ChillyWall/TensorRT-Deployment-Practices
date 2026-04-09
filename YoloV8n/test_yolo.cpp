@@ -17,8 +17,16 @@ int main() {
         fs::path(PROJECT_SOURCE_DIR) / std::string(fs["engine_path"]);
     TRTLogger glogger;
 
+    int enable_efficient_nms_plugin = fs["enable_efficient_nms_plugin"];
+    int always_rebuild = fs["always_rebuild"];
+
+    std::cout << std::format(
+                     "enable_efficient_nms_plugin: {}\nalways_rebuild: {}",
+                     enable_efficient_nms_plugin, always_rebuild)
+              << std::endl;
+
     YoloV8n yolo(onnxModelPath, engineFilePath, glogger,
-                 bool(int(fs["enable_efficient_nms_plugin"])));
+                 enable_efficient_nms_plugin, always_rebuild);
     Camera camera;
 
     while (1) {

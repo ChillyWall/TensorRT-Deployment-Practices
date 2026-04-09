@@ -1,5 +1,6 @@
 %YAML:1.0
 ---
-onnx_path: "model/yolov8n_nms.onnx"
-engine_path: "model/yolov8n_nms.engine"
-enable_efficient_nms_plugin: true
+onnx_path: "model/yolov8n.onnx"
+engine_path: "model/yolov8n.engine"
+enable_efficient_nms_plugin: 0
+always_rebuild: 0
