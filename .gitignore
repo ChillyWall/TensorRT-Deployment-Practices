@@ -1,9 +1,9 @@
 .cache/
 build/
 images/
-model/
 target/
 *.nsys-rep
 *.sqlite
+*.engine
 compile_commands.json
 metadata.json
